@@ -30,7 +30,7 @@ public:
 
 };
 
-#define A	1
+#define A	0
 #if A
 #define DATA_TYPE float
 #else
@@ -114,9 +114,9 @@ int main()
 
     srand(2012);
 
-    const int M = 256 * 2;
-    const int N = 256 * 2;
-    const int W = 256 * 2;
+    const int M = 256 * 2/2;
+    const int N = 256 * 2/2;
+    const int W = 256 * 2/2;
     
     std::vector<DATA_TYPE> v_a(M * N);
     std::vector<DATA_TYPE> v_b(N * W);
@@ -167,6 +167,14 @@ int main()
 	me.stop();
 	printf("------------------------------------------------------------\n\n");
 
+	printf("amp tiled\n");
+	me.start();
+	std::vector<DATA_TYPE> v_ref5(M * W);
+	mull_gpu_tiled<DATA_TYPE,16>(&v_a[0], M, N, &v_b[0], N, W, &v_ref5[0]);
+	printf(" completed.\n");
+	printf("\t%s\n\n", verify(v_ref5, v_ref, M * W) ? "Data matches" : "Data mismatch");
+	me.stop();
+	printf("------------------------------------------------------------\n\n");
 
     return 0;
 }

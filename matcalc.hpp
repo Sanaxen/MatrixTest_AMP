@@ -127,18 +127,117 @@ inline void mull_Unrolling(const T* a, int am, int an, const T* b, int bm, int b
 inline void copy_array(const float* v, int size, std::vector<float>& va)
 {
 	va.resize(size);
-	for ( int i = 0; i < size;i++ )
+#if 0
+	for (int i = 0; i < size; ++i)
+	{
+		va[i] = static_cast<float>(v[i]);
+	}
+#else
+	float* va_p = &va[0];
+	int i = 0;
+#pragma omp for private(i)
+	for (i = 0; i < size - 16; i += 16)
+	{
+		va_p[i] = static_cast<float>(v[i]);
+		va_p[i + 1] = static_cast<float>(v[i + 1]);
+		va_p[i + 2] = static_cast<float>(v[i + 2]);
+		va_p[i + 3] = static_cast<float>(v[i + 3]);
+		va_p[i + 4] = static_cast<float>(v[i + 4]);
+		va_p[i + 5] = static_cast<float>(v[i + 5]);
+		va_p[i + 6] = static_cast<float>(v[i + 6]);
+		va_p[i + 7] = static_cast<float>(v[i + 7]);
+		va_p[i + 8] = static_cast<float>(v[i + 8]);
+		va_p[i + 9] = static_cast<float>(v[i + 9]);
+		va_p[i + 10] = static_cast<float>(v[i + 10]);
+		va_p[i + 11] = static_cast<float>(v[i + 11]);
+		va_p[i + 12] = static_cast<float>(v[i + 12]);
+		va_p[i + 13] = static_cast<float>(v[i + 13]);
+		va_p[i + 14] = static_cast<float>(v[i + 14]);
+		va_p[i + 15] = static_cast<float>(v[i + 15]);
+	}
+	for (; i < size; ++i)
 	{
 		va[i] = v[i];
 	}
+#endif
 }
+
 inline void copy_array(const double* v, int size, std::vector<float>& va)
 {
 	va.resize(size);
+#if 0
 	for (int i = 0; i < size; i++)
 	{
 		va[i] = v[i];
 	}
+#else
+	float* va_p = &va[0];
+	int i = 0;
+#pragma omp for private(i)
+	for (i = 0; i < size - 16; i += 16)
+	{
+		va_p[i] = static_cast<float>(v[i]);
+		va_p[i + 1] = static_cast<float>(v[i + 1]);
+		va_p[i + 2] = static_cast<float>(v[i + 2]);
+		va_p[i + 3] = static_cast<float>(v[i + 3]);
+		va_p[i + 4] = static_cast<float>(v[i + 4]);
+		va_p[i + 5] = static_cast<float>(v[i + 5]);
+		va_p[i + 6] = static_cast<float>(v[i + 6]);
+		va_p[i + 7] = static_cast<float>(v[i + 7]);
+		va_p[i + 8] = static_cast<float>(v[i + 8]);
+		va_p[i + 9] = static_cast<float>(v[i + 9]);
+		va_p[i + 10] = static_cast<float>(v[i + 10]);
+		va_p[i + 11] = static_cast<float>(v[i + 11]);
+		va_p[i + 12] = static_cast<float>(v[i + 12]);
+		va_p[i + 13] = static_cast<float>(v[i + 13]);
+		va_p[i + 14] = static_cast<float>(v[i + 14]);
+		va_p[i + 15] = static_cast<float>(v[i + 15]);
+	}
+	for (; i < size; ++i)
+	{
+		va[i] = v[i];
+	}
+#endif
+
+}
+
+inline void copy_array(const float* v, int size, std::vector<double>& va)
+{
+	va.resize(size);
+#if 0
+	for (int i = 0; i < size; i++)
+	{
+		va[i] = v[i];
+	}
+#else
+	double* va_p = &va[0];
+	int i = 0;
+#pragma omp for private(i)
+	for (i = 0; i < size - 16; i += 16)
+	{
+		va_p[i] = static_cast<double>(v[i]);
+		va_p[i + 1] = static_cast<double>(v[i + 1]);
+		va_p[i + 2] = static_cast<double>(v[i + 2]);
+		va_p[i + 3] = static_cast<double>(v[i + 3]);
+		va_p[i + 4] = static_cast<double>(v[i + 4]);
+		va_p[i + 5] = static_cast<double>(v[i + 5]);
+		va_p[i + 6] = static_cast<double>(v[i + 6]);
+		va_p[i + 7] = static_cast<double>(v[i + 7]);
+		va_p[i + 8] = static_cast<double>(v[i + 8]);
+		va_p[i + 9] = static_cast<double>(v[i + 9]);
+		va_p[i + 10] = static_cast<double>(v[i + 10]);
+		va_p[i + 11] = static_cast<double>(v[i + 11]);
+		va_p[i + 12] = static_cast<double>(v[i + 12]);
+		va_p[i + 13] = static_cast<double>(v[i + 13]);
+		va_p[i + 14] = static_cast<double>(v[i + 14]);
+		va_p[i + 15] = static_cast<double>(v[i + 15]);
+	}
+	for (; i < size; ++i)
+	{
+		va[i] = v[i];
+	}
+#endif
+
 }
 
 #if USE_GPU
@@ -183,11 +282,80 @@ inline void mull_gpu(const T* a, int am, int an, const T* b, int bm, int bn, T* 
 	av_c.synchronize();
 
 	const int mn = am*bn;
-//#pragma omp parallel for
+	//copy_array(vresult, mn, ret);
+
+#pragma omp parallel for
 	for ( int i = 0; i < mn;i++ )
 	{
 		ret[i] = vresult[i];
 	}
+}
+
+template <typename T, int tile_size>
+inline int mull_gpu_tiled( const T* a, int am, int an, const T* b, int bm, int bn, T* ret)
+{
+	if (!(am%tile_size == 0 && bn%tile_size == 0 && an%tile_size == 0))
+	{
+		printf("mull_gpu_tiled size error.\n");
+		return -1;
+	}
+	const int m = am, n = bn, l = an;
+	std::vector<float> va;
+	std::vector<float> vb;
+	std::vector<float> vresult;
+	{
+		copy_array(a, am*an, va);
+		copy_array(b, bm*bn, vb);
+		vresult.resize(am*bn);
+	}
+
+	concurrency::extent<2> e_a(am, an), e_b(bm, bn), e_c(am, bn);
+
+	array_view<const float, 2> av_a(e_a, va);
+	array_view<const float, 2> av_b(e_b, vb);
+	array_view<float, 2> av_c(e_c, vresult);
+
+	extent<2> compute_domain(e_c);
+
+	parallel_for_each(compute_domain.tile<tile_size, tile_size>(), [=](tiled_index<tile_size, tile_size> tidx) restrict(amp)
+	{
+		float temp_c = 0;
+
+		index<2> localIdx = tidx.local;
+		index<2> globalIdx = tidx.global;
+
+		for (int i = 0; i < an; i += tile_size)
+		{
+			tile_static float localB[tile_size][tile_size];
+			tile_static float localA[tile_size][tile_size];
+
+			localA[localIdx[0]][localIdx[1]] = av_a(globalIdx[0], i + localIdx[1]);
+			localB[localIdx[0]][localIdx[1]] = av_b(i + localIdx[0], globalIdx[1]);
+
+			tidx.barrier.wait();
+
+			for (unsigned k = 0; k < tile_size; k++)
+			{
+				temp_c += localA[localIdx[0]][k] * localB[k][localIdx[1]];
+			}
+
+			tidx.barrier.wait();
+		}
+
+		av_c[tidx] = temp_c;
+	});
+	// copying out data is implicit - when array_view goes out of scope data is synchronized	//av_c.synchronize();
+	av_c.synchronize();
+
+	const int mn = am*bn;
+	//copy_array(vresult, mn, ret);
+
+#pragma omp parallel for
+	for (int i = 0; i < mn; i++)
+	{
+		ret[i] = vresult[i];
+	}
+	return 0;
 }
 #endif
 
